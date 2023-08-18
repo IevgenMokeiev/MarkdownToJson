@@ -8,9 +8,9 @@ let documentURL = FileManager.default.urls(for: .documentDirectory, in: .userDom
 let path = documentURL.appendingPathComponent("Tuomari").absoluteURL
 let directoryContents = try FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: nil, options: [])
 
-//try directoryContents.forEach { url in
-//    try convertFile(from: url)
-//}
+try directoryContents.forEach { url in
+    try convertFile(from: url)
+}
 try createWholeJSON(urls: directoryContents)
 
 func createWholeJSON(urls: [URL]) throws {
@@ -22,9 +22,7 @@ func createWholeJSON(urls: [URL]) throws {
     try urls.forEach { url in
         var monster = [String: Any]()
         let string = try String(contentsOf: url, encoding: .utf8)
-        var jsonObject = [String: Any]()
         let slug = url.lastPathComponent.slice(to: ".md")!
-        
         monster["slug"] = slug
         monster["name"] = string.slice(from: "title: ", to: "\n")
         resultsArray.append(monster)
@@ -124,8 +122,7 @@ func convertFile(from url: URL) throws {
     jsonObject["skills"] = skillsDict
     
     // Abilities
-    
-    let abilitiesString = string.slice(from: "ПД)\n", to: "###")
+    let abilitiesString = string.slice(from: "ПД)", to: "###")
     jsonObject["special_abilities"] = populateActions(from: abilitiesString)
     
     // Actions
@@ -156,7 +153,7 @@ func convertFile(from url: URL) throws {
 
 func populateActions(from string: String?) -> [Any] {
     let actionNames = string?.allSlices(from: "\n**", to: ".**")
-    let actionDesc = string?.allSlices(from: "** ", to: "\n")
+    let actionDesc = string?.allSlices(from: "**", to: "\n")
     var actionArray = [Any]()
     
     if let actionNames = actionNames {
