@@ -36,7 +36,7 @@ var speedDict = [String : Any]()
 speedDict["walk"] = speedString?.slice(from: "** ", to: ",")
 speedDict["swim"] = speedString?.slice(from: "плавання ", to: [",", "."])
 speedDict["fly"] = speedString?.slice(from: "політ ", to: [",", "."])
-jsonObject["fly"] = speedDict
+jsonObject["speed"] = speedDict
 let statString = string.allSlices(from: "\n|", to: "|\n").last?.trimmed()
 let statComponents = statString?.components(separatedBy: " | ")
 
@@ -49,17 +49,61 @@ jsonObject["charisma"] = statComponents?[0].slice(to: " (")
 
 let saveString = string.slice(from: "**Рятівні кидки**", to: "\n")?.trimmed()
 
-jsonObject["strength_save"] = saveString?.slice(from: "Сил +", to: ",") ?? saveString?.slice(from: "Сил +")
-jsonObject["dexterity_save"] = saveString?.slice(from: "Спр +", to: ",") ?? saveString?.slice(from: "Спр +")
-jsonObject["constitution_save"] = saveString?.slice(from: "Ста +", to: ",") ?? saveString?.slice(from: "Ста +")
-jsonObject["intelligence_save"] = saveString?.slice(from: "Інт +", to: ",") ?? saveString?.slice(from: "Інт +")
-jsonObject["wisdom_save"] = saveString?.slice(from: "Мдр +", to: ",") ?? saveString?.slice(from: "Мдр +")
-jsonObject["charisma_save"] = saveString?.slice(from: "Хар +", to: [",", ""]) ?? saveString?.slice(from: "Хар +")
+jsonObject["strength_save"] = saveString?.sliceOrEnd(from: "Сил +", to: ",")
+jsonObject["dexterity_save"] = saveString?.sliceOrEnd(from: "Спр +", to: ",")
+jsonObject["constitution_save"] = saveString?.sliceOrEnd(from: "Ста +", to: ",")
+jsonObject["intelligence_save"] = saveString?.sliceOrEnd(from: "Інт +", to: ",")
+jsonObject["wisdom_save"] = saveString?.sliceOrEnd(from: "Мдр +", to: ",")
+jsonObject["charisma_save"] = saveString?.sliceOrEnd(from: "Хар +", to: ",")
 
 jsonObject["damage_vulnerabilities"] = string.slice(from: "**Вразливість до ушкоджень** ", to: "\n")?.trimmed()
 jsonObject["damage_resistances"] = string.slice(from: "**Стійкість до ушкоджень** ", to: "\n")?.trimmed()
 jsonObject["damage_immunities"] = string.slice(from: "**Імунітет до ушкоджень** ", to: "\n")?.trimmed()
 jsonObject["condition_immunities"] =  string.slice(from: "**Імунітет до станів** ", to: "\n")?.trimmed()
+jsonObject["senses"] = string.slice(from: "**Чуття** ", to: "\n")?.trimmed()
+jsonObject["languages"] = string.slice(from: "**Мови** ", to: "\n")?.trimmed()
+jsonObject["challenge_rating"] = string.slice(from: "**Небезпека** ", to: "(")
+
+let skillsString = string.slice(from: "**Навички**", to: "\n")?.trimmed()
+var skillsDict = [String : Any]()
+
+skillsDict["акробатика"] = skillsString?.sliceOrEnd(from: "Акробатика +", to: ",")
+skillsDict["приборкання тварин"] = skillsString?.sliceOrEnd(from: "Приборкання тварин ", to: ",")
+skillsDict["аркана"] = skillsString?.sliceOrEnd(from: "Аркана +", to: ",")
+skillsDict["атлетика"] = skillsString?.sliceOrEnd(from: "Атлетика +",to: ",")
+skillsDict["обман"] = skillsString?.sliceOrEnd(from: "Обман +",to: ",")
+skillsDict["історія"] = skillsString?.sliceOrEnd(from: "Історія +",to: ",")
+skillsDict["здогадливість"] = skillsString?.sliceOrEnd(from: "Здогадливість +", to: ",")
+skillsDict["залякування"] = skillsString?.sliceOrEnd(from: "Залякування +", to: ",")
+skillsDict["розслідування"] = skillsString?.sliceOrEnd(from: "Розслідування +", to: ",")
+skillsDict["медицина"] = skillsString?.sliceOrEnd(from: "Медицина +", to: ",")
+skillsDict["природа"] = skillsString?.sliceOrEnd(from: "Природа +", to: ",")
+skillsDict["сприйняття"] = skillsString?.sliceOrEnd(from: "Увага +", to: ",")
+skillsDict["артистичність"] = skillsString?.sliceOrEnd(from: "Артистичність +", to: ",")
+skillsDict["переконливість"] = skillsString?.sliceOrEnd(from: "Переконливість +", to: ",")
+skillsDict["релігія"] = skillsString?.sliceOrEnd(from: "Релігія +", to: ",")
+skillsDict["спритність рук"] = skillsString?.sliceOrEnd(from: "Спритність рук +", to: ",")
+skillsDict["непомітність"] = skillsString?.sliceOrEnd(from: "Непомітність +", to: ",")
+skillsDict["виживання"] = skillsString?.sliceOrEnd(from: "Виживання +", to: ",")
+jsonObject["skills"] = skillsDict
+
+// Abilities
+
+let abilitiesString = string.slice(from: "ПД)\n", to: "###")
+let abilityNames = abilitiesString?.allSlices(from: "\n**", to: ".**")
+let abilityDesc = abilitiesString?.allSlices(from: "** ", to: "\n")
+var abilityArray = [Any]()
+
+if let abilityNames = abilityNames {
+    for index in 0..<abilityNames.count {
+        var dict = [String : Any]()
+        dict["name"] = abilityNames[index].trimmed()
+        dict["desc"] = abilityDesc?[index].trimmed()
+        abilityArray.append(dict)
+    }
+}
+
+jsonObject["special_abilities"] = abilityArray
 
 print(jsonObject)
 
@@ -81,6 +125,15 @@ extension String {
         guard let rangeFrom = range(of: from)?.upperBound else { return nil }
         guard let rangeTo = self[rangeFrom...].range(of: to)?.lowerBound else { return nil }
         return String(self[rangeFrom..<rangeTo])
+    }
+    
+    func sliceOrEnd(from: String, to: String) -> String? {
+        let slice = slice(from: from, to: to)
+        if let slice {
+            return slice
+        } else {
+            return self.slice(from: from)
+        }
     }
     
     func slice(from: String, to: [String]) -> String? {
