@@ -8,8 +8,34 @@ let documentURL = FileManager.default.urls(for: .documentDirectory, in: .userDom
 let path = documentURL.appendingPathComponent("Tuomari").absoluteURL
 let directoryContents = try FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: nil, options: [])
 
-try directoryContents.forEach { url in
-    try convertFile(from: url)
+//try directoryContents.forEach { url in
+//    try convertFile(from: url)
+//}
+try createWholeJSON(urls: directoryContents)
+
+func createWholeJSON(urls: [URL]) throws {
+    var jsonObject = [String: Any]()
+    let count = urls.count
+    jsonObject["count"] = count
+    var resultsArray = [Any]()
+    
+    try urls.forEach { url in
+        var monster = [String: Any]()
+        let string = try String(contentsOf: url, encoding: .utf8)
+        var jsonObject = [String: Any]()
+        let slug = url.lastPathComponent.slice(to: ".md")!
+        
+        monster["slug"] = slug
+        monster["name"] = string.slice(from: "title: ", to: "\n")
+        resultsArray.append(monster)
+    }
+    jsonObject["results"] = resultsArray
+    
+    // Output
+    let jsonFile = try JSONSerialization.data(withJSONObject: jsonObject)
+    let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    let path = documentsURL.appendingPathComponent("monsters.json")
+    try jsonFile.write(to: path)
 }
 
 func convertFile(from url: URL) throws {
@@ -120,10 +146,8 @@ func convertFile(from url: URL) throws {
     jsonObject["reactions"] = populateActions(from: reactionsString)
     
     // Output
-    
     let jsonFile = try JSONSerialization.data(withJSONObject: jsonObject)
     let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-    
     let jsonPath = documentsURL.appendingPathComponent("JSON")
     try FileManager.default.createDirectory(atPath: jsonPath.path, withIntermediateDirectories: true, attributes: nil)
     let path = jsonPath.appendingPathComponent("\(slug).json")
