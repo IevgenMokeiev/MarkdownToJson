@@ -29,16 +29,6 @@ extension String {
         }
     }
     
-    func slice(from: String, to: [String]) -> String? {
-        return to.compactMap { toString in
-            if let slice = slice(from:from, to: toString) {
-                return slice
-            } else {
-                return nil
-            }
-        }.first
-    }
-    
     func allSlices(from: String, to: String) -> [String] {
         components(separatedBy: from).dropFirst().compactMap { sub in
             (sub.range(of: to)?.lowerBound).flatMap { endRange in

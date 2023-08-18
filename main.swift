@@ -69,8 +69,8 @@ func convertFile(from url: URL) throws {
     var speedDict = [String : Any]()
     
     speedDict["walk"] = speedString?.slice(from: "** ", to: ",")
-    speedDict["swim"] = speedString?.slice(from: "плавання ", to: [",", "."])
-    speedDict["fly"] = speedString?.slice(from: "політ ", to: [",", "."])
+    speedDict["swim"] = speedString?.sliceOrEnd(from: "плавання ", to: ",")
+    speedDict["fly"] = speedString?.sliceOrEnd(from: "політ ", to: ",")
     jsonObject["speed"] = speedDict
     let statString = string.allSlices(from: "\n|", to: "|\n").last?.trimmed()
     let statComponents = statString?.components(separatedBy: " | ")
