@@ -49,19 +49,20 @@ func convertFile(from url: URL) throws {
     let size = mainComponents?[1]
     let alignment = mainComponents?.last
     
-    jsonObject["type"] = type
-    jsonObject["size"] = size
-    jsonObject["alignment"] = alignment
+    jsonObject["type"] = type ?? ""
+    jsonObject["subtype"] = ""
+    jsonObject["size"] = getSizeString(from: String(size!)) 
+    jsonObject["alignment"] = alignment ?? ""
     
     let armorString = string.slice(from: "**Клас захисту", to: "\n")?.trimmed()
     
-    jsonObject["armor_class"] = armorString?.slice(from: "** ", to: " ")
-    jsonObject["armor_desc"] = armorString?.slice(from: "(", to: ")")
+    jsonObject["armor_class"] = armorString?.slice(from: "** ", to: " ") ?? ""
+    jsonObject["armor_desc"] = armorString?.slice(from: "(", to: ")") ?? ""
     
     let hpString = string.slice(from: "**Пункти здоров'я", to: "\n")?.trimmed()
     
-    jsonObject["hit_points"] = hpString?.slice(from: "** ", to: " ")
-    jsonObject["hit_dice"] =  hpString?.slice(from: "(", to: ")")
+    jsonObject["hit_points"] = hpString?.slice(from: "** ", to: " ") ?? ""
+    jsonObject["hit_dice"] =  hpString?.slice(from: "(", to: ")") ?? ""
     
     let speedString = string.slice(from: "**Швидкість", to: "\n")?.trimmed()
     
@@ -74,29 +75,29 @@ func convertFile(from url: URL) throws {
     let statString = string.allSlices(from: "\n|", to: "|\n").last?.trimmed()
     let statComponents = statString?.components(separatedBy: " | ")
     
-    jsonObject["strength"] = statComponents?[0].slice(to: " (")
-    jsonObject["dexterity"] =  statComponents?[1].slice(to: " (")
-    jsonObject["constitution"] = statComponents?[2].slice(to: " (")
-    jsonObject["intelligence"] = statComponents?[3].slice(to: " (")
-    jsonObject["wisdom"] = statComponents?[4].slice(to: " (")
-    jsonObject["charisma"] = statComponents?[0].slice(to: " (")
+    jsonObject["strength"] = statComponents?[0].slice(to: " (") ?? ""
+    jsonObject["dexterity"] =  statComponents?[1].slice(to: " (") ?? ""
+    jsonObject["constitution"] = statComponents?[2].slice(to: " (") ?? ""
+    jsonObject["intelligence"] = statComponents?[3].slice(to: " (") ?? ""
+    jsonObject["wisdom"] = statComponents?[4].slice(to: " (") ?? ""
+    jsonObject["charisma"] = statComponents?[0].slice(to: " (") ?? ""
     
     let saveString = string.slice(from: "**Рятівні кидки**", to: "\n")?.trimmed()
     
-    jsonObject["strength_save"] = saveString?.sliceOrEnd(from: "Сил +", to: ",")
-    jsonObject["dexterity_save"] = saveString?.sliceOrEnd(from: "Спр +", to: ",")
-    jsonObject["constitution_save"] = saveString?.sliceOrEnd(from: "Ста +", to: ",")
-    jsonObject["intelligence_save"] = saveString?.sliceOrEnd(from: "Інт +", to: ",")
-    jsonObject["wisdom_save"] = saveString?.sliceOrEnd(from: "Мдр +", to: ",")
-    jsonObject["charisma_save"] = saveString?.sliceOrEnd(from: "Хар +", to: ",")
+    jsonObject["strength_save"] = saveString?.sliceOrEnd(from: "Сил +", to: ",") ?? ""
+    jsonObject["dexterity_save"] = saveString?.sliceOrEnd(from: "Спр +", to: ",") ?? ""
+    jsonObject["constitution_save"] = saveString?.sliceOrEnd(from: "Ста +", to: ",") ?? ""
+    jsonObject["intelligence_save"] = saveString?.sliceOrEnd(from: "Інт +", to: ",") ?? ""
+    jsonObject["wisdom_save"] = saveString?.sliceOrEnd(from: "Мдр +", to: ",") ?? ""
+    jsonObject["charisma_save"] = saveString?.sliceOrEnd(from: "Хар +", to: ",") ?? ""
     
-    jsonObject["damage_vulnerabilities"] = string.slice(from: "**Вразливість до ушкоджень** ", to: "\n")?.trimmed()
-    jsonObject["damage_resistances"] = string.slice(from: "**Стійкість до ушкоджень** ", to: "\n")?.trimmed()
-    jsonObject["damage_immunities"] = string.slice(from: "**Імунітет до ушкоджень** ", to: "\n")?.trimmed()
-    jsonObject["condition_immunities"] =  string.slice(from: "**Імунітет до станів** ", to: "\n")?.trimmed()
-    jsonObject["senses"] = string.slice(from: "**Чуття** ", to: "\n")?.trimmed()
-    jsonObject["languages"] = string.slice(from: "**Мови** ", to: "\n")?.trimmed()
-    jsonObject["challenge_rating"] = string.slice(from: "**Небезпека** ", to: "(")
+    jsonObject["damage_vulnerabilities"] = string.slice(from: "**Вразливість до ушкоджень** ", to: "\n")?.trimmed() ?? ""
+    jsonObject["damage_resistances"] = string.slice(from: "**Стійкість до ушкоджень** ", to: "\n")?.trimmed() ?? ""
+    jsonObject["damage_immunities"] = string.slice(from: "**Імунітет до ушкоджень** ", to: "\n")?.trimmed() ?? ""
+    jsonObject["condition_immunities"] =  string.slice(from: "**Імунітет до станів** ", to: "\n")?.trimmed() ?? ""
+    jsonObject["senses"] = string.slice(from: "**Чуття** ", to: "\n")?.trimmed() ?? ""
+    jsonObject["languages"] = string.slice(from: "**Мови** ", to: "\n")?.trimmed() ?? ""
+    jsonObject["challenge_rating"] = string.slice(from: "**Небезпека** ", to: " (") ?? ""
     
     let skillsString = string.slice(from: "**Навички**", to: "\n")?.trimmed()
     var skillsDict = [String : Any]()
@@ -165,4 +166,23 @@ func populateActions(from string: String?) -> [Any] {
         }
     }
     return actionArray
+}
+
+func getSizeString(from: String) -> String {
+    switch from {
+    case "крихітного":
+        return "tiny"
+    case "малого":
+        return "small"
+    case "середнього":
+        return "medium"
+    case "великого":
+        return "large"
+    case "величезного":
+        return "huge"
+    case "гігантського":
+        return "gargantuan"
+    default:
+        return "medium"
+    }
 }
