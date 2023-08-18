@@ -2,12 +2,12 @@
 
 import Foundation
 
-let fileURL = URL(string: "https://raw.githubusercontent.com/Tuomari-ua/tuomari-ua.github.io/main/srd/_monsters/adult_black_dragon.md")!
+let fileURL = URL(string: "https://raw.githubusercontent.com/Tuomari-ua/tuomari-ua.github.io/main/srd/_monsters/gladiator.md")!
 let string = try String(contentsOf: fileURL, encoding: .utf8)
-
 var jsonObject = [String: Any]()
+let slug = fileURL.relativeString.slice(from: "_monsters/", to: ".md")!
 
-jsonObject["slug"] = string.slice(from: "title: ", to: "\n")
+jsonObject["slug"] = slug
 jsonObject["name"] = string.slice(from: "title: ", to: "\n")
 
 let mainComponents = string.slice(from: "_", to: "_")?.trimmed().split(separator: " ")
@@ -90,24 +90,52 @@ jsonObject["skills"] = skillsDict
 // Abilities
 
 let abilitiesString = string.slice(from: "ПД)\n", to: "###")
-let abilityNames = abilitiesString?.allSlices(from: "\n**", to: ".**")
-let abilityDesc = abilitiesString?.allSlices(from: "** ", to: "\n")
-var abilityArray = [Any]()
+jsonObject["special_abilities"] = populateActions(from: abilitiesString)
 
-if let abilityNames = abilityNames {
-    for index in 0..<abilityNames.count {
-        var dict = [String : Any]()
-        dict["name"] = abilityNames[index].trimmed()
-        dict["desc"] = abilityDesc?[index].trimmed()
-        abilityArray.append(dict)
-    }
-}
+// Actions
+let actionsString = string.sliceOrEnd(from: "Дії\n", to: "###")
+jsonObject["actions"] = populateActions(from: actionsString)
 
-jsonObject["special_abilities"] = abilityArray
+// Legendary
+
+let legendarySlice = string.slice(from: "### Легендарні дії\n")
+let legendaryDesc = legendarySlice?.slice(to: "\n")?.trimmed()
+let legendaryString = populateActions(from: legendarySlice?.slice(from: "\n"))
+
+jsonObject["legendary_desc"] = legendaryDesc
+jsonObject["legendary_actions"] = legendaryString
+
+// Reactions
+let reactionsString = string.sliceOrEnd(from: "### Реакції", to: "###")
+jsonObject["reactions"] = populateActions(from: reactionsString)
+
+// Output
+
+let jsonFile = try JSONSerialization.data(withJSONObject: jsonObject)
+let path = FileManager.default.urls(for: .documentDirectory,
+                                    in: .userDomainMask)[0].appendingPathComponent("\(slug).json")
+try jsonFile.write(to: path)
 
 print(jsonObject)
 
 //END
+
+func populateActions(from string: String?) -> [Any] {
+    let actionNames = string?.allSlices(from: "\n**", to: ".**")
+    let actionDesc = string?.allSlices(from: "** ", to: "\n")
+    var actionArray = [Any]()
+
+    if let actionNames = actionNames {
+        for index in 0..<actionNames.count {
+            var dict = [String : Any]()
+            dict["name"] = actionNames[index].trimmed()
+            dict["desc"] = actionDesc?[index].trimmed()
+            actionArray.append(dict)
+        }
+    }
+    
+    return actionArray
+}
 
 extension String {
     
