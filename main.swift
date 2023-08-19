@@ -2,8 +2,6 @@
 
 import Foundation
 
-// let fileURL = URL(string: "https://raw.githubusercontent.com/Tuomari-ua/tuomari-ua.github.io/main/srd/_monsters/gladiator.md")!
-
 let documentURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
 let path = documentURL.appendingPathComponent("Tuomari").absoluteURL
 let directoryContents = try FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: nil, options: [])
@@ -17,16 +15,20 @@ func createWholeJSON(urls: [URL]) throws {
     var jsonObject = [String: Any]()
     let count = urls.count
     jsonObject["count"] = count
-    var resultsArray = [Any]()
+    var resultsArray = [[String: String]]()
     
     try urls.forEach { url in
-        var monster = [String: Any]()
+        var monster = [String: String]()
         let string = try String(contentsOf: url, encoding: .utf8)
         let slug = url.lastPathComponent.slice(to: ".md")!
         monster["slug"] = slug
         monster["name"] = string.slice(from: "title: ", to: "\n")
         resultsArray.append(monster)
     }
+    resultsArray.sort { left, right in
+        left["name"] ?? "" < right["name"] ?? ""
+    }
+    
     jsonObject["results"] = resultsArray
     
     // Output
@@ -44,13 +46,17 @@ func convertFile(from url: URL) throws {
     jsonObject["slug"] = slug
     jsonObject["name"] = string.slice(from: "title: ", to: "\n")
     
-    let mainComponents = string.slice(from: "_", to: "_")?.trimmed().split(separator: " ")
+    let mainString = string.slice(from: "_", to: "_")?.trimmed()
+    let alignmentComponents = mainString?.split(separator: ",")
+    let mainComponents = alignmentComponents?[0].split(separator: " ")
     let type = mainComponents?[0]
     let size = mainComponents?[1]
-    let alignment = mainComponents?.last
+    let subtype = (mainComponents?.count ?? 0 >= 4 ? mainComponents?[3] : "") ?? ""
+    
+    let alignment = alignmentComponents?.last
     
     jsonObject["type"] = type ?? ""
-    jsonObject["subtype"] = ""
+    jsonObject["subtype"] =  String(subtype).slice(from: "(", to: ")")
     jsonObject["size"] = getSizeString(from: String(size!)) 
     jsonObject["alignment"] = alignment ?? ""
     
@@ -123,21 +129,20 @@ func convertFile(from url: URL) throws {
     jsonObject["skills"] = skillsDict
     
     // Abilities
-    let abilitiesString = string.slice(from: "ПД)", to: "###")
+    let abilitiesString = string.sliceOrEnd(from: "ПД)", to: "###")
     jsonObject["special_abilities"] = populateActions(from: abilitiesString)
     
     // Actions
-    let actionsString = string.sliceOrEnd(from: "Дії\n", to: "###")
+    let actionsString = string.sliceOrEnd(from: "Дії", to: "###")
     jsonObject["actions"] = populateActions(from: actionsString)
     
     // Legendary
-    
     let legendarySlice = string.slice(from: "### Легендарні дії\n")
     let legendaryDesc = legendarySlice?.slice(to: "\n")?.trimmed()
     let legendaryString = populateActions(from: legendarySlice?.slice(from: "\n"))
     
-    jsonObject["legendary_desc"] = legendaryDesc
-    jsonObject["legendary_actions"] = legendaryString
+    jsonObject["legendary_desc"] = legendaryDesc ?? ""
+    jsonObject["legendary_actions"] = legendaryString.isEmpty ? "" : legendaryString
     
     // Reactions
     let reactionsString = string.sliceOrEnd(from: "### Реакції", to: "###")
@@ -146,7 +151,7 @@ func convertFile(from url: URL) throws {
     // Output
     let jsonFile = try JSONSerialization.data(withJSONObject: jsonObject)
     let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-    let jsonPath = documentsURL.appendingPathComponent("JSON")
+    let jsonPath = documentsURL.appendingPathComponent("jsonData")
     try FileManager.default.createDirectory(atPath: jsonPath.path, withIntermediateDirectories: true, attributes: nil)
     let path = jsonPath.appendingPathComponent("\(slug).json")
     try jsonFile.write(to: path)
