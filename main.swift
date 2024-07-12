@@ -2,14 +2,31 @@
 
 import Foundation
 
-let documentURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-let path = documentURL.appendingPathComponent("Tuomari").absoluteURL
-let directoryContents = try FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: nil, options: [])
-
-try directoryContents.forEach { url in
-    try convertFile(from: url)
+struct MonsterList: Codable {
+    let count: Int
+    let results: [MonsterEntry]
 }
-try createWholeJSON(urls: directoryContents)
+
+struct MonsterEntry: Codable {
+    let name: String
+    let slug: String
+}
+
+let listURL = URL(string:"https://raw.githubusercontent.com/Tuomari-ua/tuomari-ua.github.io/main/gen/monsters.json")!
+let jsonData = try String(contentsOf: listURL).data(using: .utf8)!
+let monsterList: MonsterList = try JSONDecoder().decode(MonsterList.self, from: jsonData)
+
+try monsterList.results.forEach { entry in
+    let URL = URL(string: "https://raw.githubusercontent.com/Tuomari-ua/tuomari-ua.github.io/main/srd/_monsters/" + entry.slug + ".md")!
+    try convertFile(from: URL) 
+}
+
+func generateMonstersJSON() throws {
+    let documentURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    let path = documentURL.appendingPathComponent("Tuomari").absoluteURL
+    let directoryContents = try FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: nil, options: [])
+    try createWholeJSON(urls: directoryContents)
+}
 
 func createWholeJSON(urls: [URL]) throws {
     var jsonObject = [String: Any]()
@@ -56,7 +73,7 @@ func convertFile(from url: URL) throws {
     let alignment = alignmentComponents?.last
     
     jsonObject["type"] = type ?? ""
-    jsonObject["subtype"] =  String(subtype).slice(from: "(", to: ")")
+    jsonObject["subtype"] = String(subtype).slice(from: "(", to: ")") ?? ""
     jsonObject["size"] = getSizeString(from: String(size!)) 
     jsonObject["alignment"] = alignment ?? ""
     
@@ -146,7 +163,7 @@ func convertFile(from url: URL) throws {
     
     // Reactions
     let reactionsString = string.sliceOrEnd(from: "### Реакції", to: "###")
-    jsonObject["reactions"] = populateActions(from: reactionsString)
+    jsonObject["reactions"] = populateActions(from: reactionsString) 
     
     // Output
     let jsonFile = try JSONSerialization.data(withJSONObject: jsonObject)
@@ -158,19 +175,23 @@ func convertFile(from url: URL) throws {
 }
 
 func populateActions(from string: String?) -> [Any] {
-    let actionNames = string?.allSlices(from: "\n**", to: ".**")
-    let actionDesc = string?.allSlices(from: "**", to: "\n")
-    var actionArray = [Any]()
+    let actions = string?.components(separatedBy: "\n**").filter { !$0.isEmpty }
+    var actionsArray = [Any]()
     
-    if let actionNames = actionNames {
-        for index in 0..<actionNames.count {
-            var dict = [String : Any]()
-            dict["name"] = actionNames[index].trimmed()
-            dict["desc"] = actionDesc?[index].trimmed()
-            actionArray.append(dict)
+    guard let actions else {
+        return []
+    }
+    
+    for action in actions {
+        var dict = [String : Any]()
+        dict["name"] = action.slice(to: ".**")?.trimmed()
+        dict["desc"] = action.slice(from: "**")?.trimmed()
+        if !dict.isEmpty {
+            actionsArray.append(dict)
         }
     }
-    return actionArray
+    
+    return actionsArray
 }
 
 func getSizeString(from: String) -> String {

@@ -1,4 +1,4 @@
-// String + Extensions
+// String+Extensions
 
 import Foundation
 

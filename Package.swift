@@ -9,7 +9,7 @@ let package = Package(
         .executableTarget(
             name: name,
             path: "",
-            resources: [.copy("adult_black_dragon.md")]
+            resources: []
         )
     ]
 )
